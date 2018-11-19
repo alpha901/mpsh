@@ -1,6 +1,6 @@
 CC=gcc
 
-CFLAGS= -Wall -g
+CFLAGS= -Wall -g -std=c11
 
 LDLIBS= -lreadline
 
@@ -10,5 +10,6 @@ mpsh: mpsh.c
 
 cleanall:
 	rm -f *~ $(ALL)
+	rm -f *#* $(ALL)
 
 

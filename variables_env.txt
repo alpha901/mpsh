@@ -1,0 +1,2 @@
+alpha=je teste ma fonction
+variable non existant=un deuxieme test
