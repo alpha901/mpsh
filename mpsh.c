@@ -5,20 +5,30 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 #define NB_COMMANDES 13
 #define CARACTERES_AUTORISES 13
+#define NB_MAX_MOTS_COMMANDE 5
 
 char caracteresAutorises[]={'.','_','$','/','~','-','=','?',':','>','<','|','&'};
-char *nomsCommandes[]={"cd","alias","cat","echo","exit","history","ls","mkdir","pwd","type","unalias","umask","export"};
+char *nomsCommandes[]={"cd","alias","cat","echo","exit","history","ls","mkdir","pwd",
+"type","unalias","umask","export"};
 
-//retourne 1 si la chaine commande est 1 commande valide pour mpsh, 0 sinon
-short commandeCorrecte(char *commande){
-	char *mot=strtok(commande," "); // on parcours tous les mots de la commande séparés par des espaces
-	int premierMotEstUneCommande=0;
+//retourne le nombre de mots de commande si c'est 1 commande valide, 0 sinon (stocke les mots dans motsDeLaCommande)
+short commandeCorrecte(char *commande,char **motsDeLaCommande){
+	char tmp[strlen(commande)+1];
+	strcpy(tmp,commande);
+	char *mot=strtok(tmp," "); // on parcours tous les mots de la commande séparés par des espaces
+	short premierMotEstUneCommande=0,nbMots=0;
 	char caractereCourant;
 	while(mot!=NULL){
+		if(nbMots>4) //commande incorrecte car trop de mots
+			return 0;
+		motsDeLaCommande[nbMots]=(char *)malloc(strlen(mot)+1);
+		strcpy(motsDeLaCommande[nbMots++],mot);
+		
 		if(!premierMotEstUneCommande){ //on traite d'abord le premier mot qui doit être une commande
 			for(int j=0;j<NB_COMMANDES;j++){
 				if(strcmp(nomsCommandes[j],mot)==0){
@@ -34,7 +44,6 @@ short commandeCorrecte(char *commande){
 			int caractereValide=0,i=0;
 			caractereCourant=mot[i];
 			while(caractereCourant!='\0'){
-				// printf("%c ",caractereCourant);
 				if(!isalnum(caractereCourant)){
 					for(int j=0;j<CARACTERES_AUTORISES;j++){
 						if(caracteresAutorises[j]==caractereCourant){
@@ -50,71 +59,64 @@ short commandeCorrecte(char *commande){
 		}//else
 		mot=strtok(NULL," ");
 	}//while
-	return 1;
+	return nbMots;
 }
 
 //On traite la commande correcte
-void traitementCommande(char *commande){
-	printf("test : le commande est %s\n", commande);
-	char *cle;
-	int argc = 1;
-	cle =strtok(commande," "); // on parcours tous les mots de la commande séparés par des espaces
-	int pos = -1;
-	//pour localiser la commande en utilisant le tab nomsCommandes
-	for(int j=0;j<NB_COMMANDES;j++){
-		if(strcmp(nomsCommandes[j],cle)==0){
-			pos = j;
-			break;
-		}
-	}
-	// pour compter qu'il y a combien d'argument
-	while (cle != NULL)
-	{
-		cle = strtok(NULL, " ");
-		argc++;
-	}
-
-	// stocker les arguments de commande dans un tab de chaine de caratère
-	char * cmd[argc];
-	cle =strtok(commande," ");
-	cmd[0] = cle;
-	printf("test : cmd[0]%s\n",cmd[0]);
-	for (int i = 1; i < argc; i++) {
-		cmd[i] = strtok(NULL, "\0");
-		printf("test : cmd[%d]%s\n",i,cmd[i]);
-	}
-
-	// appliquer exec
-	if (pos>0) {
-		if (pos==6) {
-			printf("test : [%s]\n",cle );
-			execl("/bin/ls", "ls", cmd[1], (char *)0);
-		}
-	}
-
+void traitementCommande(char **motsDeLaCommande,int nbMots){
+	//préparation du tableau des mots de la commande pour le execv
+	char **elementsDeLaCommande=(char **)malloc((nbMots+1)*sizeof(char *));
+	if(elementsDeLaCommande==NULL)
+		printf("Echec du traitement de la commande \n");
+	else{
+		memcpy(elementsDeLaCommande,motsDeLaCommande,nbMots*sizeof(char *)); 
+		elementsDeLaCommande[nbMots]=NULL;
+		struct stat *x=malloc(sizeof(struct stat));
+		char *path1=malloc(10+strlen(motsDeLaCommande[0])),*path2=malloc(10+strlen(motsDeLaCommande[0]));
+		strcpy(path1,"/bin/");
+		strcpy(path2,"/usr/bin/");
+		char *pathsCommandesExternes[]={path1,path2};
+		for(int i=0;i<2;i++){ //on parcourt les répertoires contenant les exécutables des commandes externes
+			strcat(pathsCommandesExternes[i],motsDeLaCommande[0]);
+			int i=stat(pathsCommandesExternes[i],x);
+			if(i==-1)	perror(motsDeLaCommande[0]);
+			else{
+				if(S_ISREG(x->st_mode)){ // si l'exécutable existe bien, on l'exécute dans 1 nouveau processus
+					int pid = fork();//on crée 1 processus fils qui exécute la commande
+					  if (pid<0){
+						  printf("Échec de la commande \n");
+						  exit(1);
+					  }
+					  else if (pid==0){
+						  execv(pathsCommandesExternes[i],elementsDeLaCommande);
+					  }
+					  else{
+						  waitpid(pid,NULL,0);// le père attend le fils
+						  for(int i=0;i<nbMots;i++)
+							free(motsDeLaCommande[i]);
+						free(elementsDeLaCommande);//on désalloue le tableau utilisé pour execv
+						  break;
+					  }
+				}//if
+				else	printf("%s pas bon\n",pathsCommandesExternes[i]);
+			}//else
+		}//for
+	}//else
 }
-
 int main() {
-  while(1){
-    char *commande=readline("mon prompt>>");
-		printf("%s\n",commande);
-
-		if(!commandeCorrecte(commande)){
-			// si la commande n'est pas correcte, on affiche error et refait la boucle.
-			printf("Votre commande n'est pas correcte.\n");
-		}else{
-			// sinon la commande est correcte, on la traite.
-			int pid = fork();//on crée des fils
-			if (pid<0) {
-				printf("Échec");
-				exit(1);
-			}else if (pid==0){
-				traitementCommande(commande);
-			}else{
-				waitpid(pid,NULL,0);// le père attend le fils
+	while(1){
+		char *commande=readline("mon prompt>>");
+		char **motsCommande=(char **)malloc(NB_MAX_MOTS_COMMANDE*sizeof(char *));
+		//si la commande n'est pas 1 chaîne vide,on la vérifie et on la traite si elle est correcte
+		if(strcmp(commande,"")){
+			if(motsCommande!=NULL){
+				int nbMots;
+				if(!(nbMots=commandeCorrecte(commande,motsCommande)))
+					printf("La commande \"%s\" n'est pas correcte.\n",commande);
+				else	traitementCommande(motsCommande,nbMots);
+				free(motsCommande);
 			}
 		}
-    free(commande);
-  }
-  return 0;
+	}
+	return 0;
 }
