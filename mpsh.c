@@ -117,6 +117,7 @@ int main() {
 				free(motsCommande);
 			}
 		}
+		free(commande);
 	}
 	return 0;
 }
