@@ -1,13 +1,5 @@
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/stat.h>
-#include <readline/readline.h>
-#include <readline/history.h>
+#include "mpsh_builtins.h"
+
 #define NB_COMMANDES 13
 #define CARACTERES_AUTORISES 13
 #define NB_MAX_MOTS_COMMANDE 5
@@ -24,11 +16,9 @@ short commandeCorrecte(char *commande,char **motsDeLaCommande){
 	short premierMotEstUneCommande=0,nbMots=0;
 	char caractereCourant;
 	while(mot!=NULL){
-		if(nbMots>4) //commande incorrecte car trop de mots
-			return 0;
 		motsDeLaCommande[nbMots]=(char *)malloc(strlen(mot)+1);
 		strcpy(motsDeLaCommande[nbMots++],mot);
-		
+
 		if(!premierMotEstUneCommande){ //on traite d'abord le premier mot qui doit être une commande
 			for(int j=0;j<NB_COMMANDES;j++){
 				if(strcmp(nomsCommandes[j],mot)==0){
@@ -62,6 +52,7 @@ short commandeCorrecte(char *commande,char **motsDeLaCommande){
 	return nbMots;
 }
 
+
 //On traite la commande correcte
 void traitementCommande(char **motsDeLaCommande,int nbMots){
 	//préparation du tableau des mots de la commande pour le execv
@@ -69,40 +60,52 @@ void traitementCommande(char **motsDeLaCommande,int nbMots){
 	if(elementsDeLaCommande==NULL)
 		printf("Echec du traitement de la commande \n");
 	else{
-		memcpy(elementsDeLaCommande,motsDeLaCommande,nbMots*sizeof(char *)); 
+		memcpy(elementsDeLaCommande,motsDeLaCommande,nbMots*sizeof(char *));
 		elementsDeLaCommande[nbMots]=NULL;
 		struct stat *x=malloc(sizeof(struct stat));
 		char *path1=malloc(10+strlen(motsDeLaCommande[0])),*path2=malloc(10+strlen(motsDeLaCommande[0]));
 		strcpy(path1,"/bin/");
 		strcpy(path2,"/usr/bin/");
 		char *pathsCommandesExternes[]={path1,path2};
-		for(int i=0;i<2;i++){ //on parcourt les répertoires contenant les exécutables des commandes externes
-			strcat(pathsCommandesExternes[i],motsDeLaCommande[0]);
-			int i=stat(pathsCommandesExternes[i],x);
-			if(i==-1)	perror(motsDeLaCommande[0]);
-			else{
-				if(S_ISREG(x->st_mode)){ // si l'exécutable existe bien, on l'exécute dans 1 nouveau processus
-					int pid = fork();//on crée 1 processus fils qui exécute la commande
-					  if (pid<0){
-						  printf("Échec de la commande \n");
-						  exit(1);
-					  }
-					  else if (pid==0){
-						  execv(pathsCommandesExternes[i],elementsDeLaCommande);
-					  }
-					  else{
-						  waitpid(pid,NULL,0);// le père attend le fils
-						  for(int i=0;i<nbMots;i++)
-							free(motsDeLaCommande[i]);
-						free(elementsDeLaCommande);//on désalloue le tableau utilisé pour execv
-						  break;
-					  }
-				}//if
-				else	printf("%s pas bon\n",pathsCommandesExternes[i]);
-			}//else
-		}//for
+		//On traite des commandes internes;
+		if (strcmp(elementsDeLaCommande[0],"cd")==0) {
+			traitementCommandeCD(elementsDeLaCommande, nbMots);
+		}
+		else if (strcmp(elementsDeLaCommande[0],"exit")==0){
+			traitementCommandeEXIT(elementsDeLaCommande, nbMots);
+		}else{
+			//On traite des commandes externes;
+			for(int i=0;i<2;i++){ //on parcourt les répertoires contenant les exécutables des commandes externes
+				strcat(pathsCommandesExternes[i],motsDeLaCommande[0]);
+				int k=stat(pathsCommandesExternes[i],x);
+				if(k==-1)
+						perror(motsDeLaCommande[0]);
+				else{
+					if(S_ISREG(x->st_mode)){ // si l'exécutable existe bien, on l'exécute dans 1 nouveau processus
+							int pid = fork();//on crée 1 processus fils qui exécute la commande
+								if (pid<0){
+									printf("Échec de la commande \n");
+								}
+								else if (pid==0){
+										if (execv(pathsCommandesExternes[i],elementsDeLaCommande)<0){
+												perror("Échec de exec");
+												exit(1);
+										}
+								}
+								else{
+									waitpid(pid,NULL,0);// le père attend le fils
+									for(int i=0;i<nbMots;i++)
+									free(motsDeLaCommande[i]);
+									free(elementsDeLaCommande);//on désalloue le tableau utilisé pour execv
+									break;
+								}
+					}//if
+				}//else
+			}//for
+		}
 	}//else
 }
+
 int main() {
 	while(1){
 		char *commande=readline("mon prompt>>");

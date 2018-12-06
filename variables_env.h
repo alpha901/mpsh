@@ -1,5 +1,5 @@
 #ifndef VARIABLES_ENV_H
-#define  VARIABLES_ENV
+#define  VARIABLES_ENV_H
 
 void print_all_env();
 void print_one_env(const char *variable_env_name);

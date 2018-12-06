@@ -1,7 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "variables.h"
 
 static list_variables make_variable(char *nom_variable, char *valeur_variable){

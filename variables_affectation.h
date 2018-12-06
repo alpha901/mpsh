@@ -1,5 +1,5 @@
 #ifndef VARIABLES_AFFECTATION_H
-#define VARIABLES_AFFECTATION
+#define VARIABLES_AFFECTATION_H
 
 typedef struct variables variables;
 typedef variables *list_variables;

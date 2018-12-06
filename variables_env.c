@@ -14,6 +14,7 @@
 /*
 *fonction appelee quand une fonction ou un appel system renvoi une erreur
 */
+
 static void sortie_error(){
 	fprintf(stderr, "%s in file %s in line %d\n", strerror( errno ), __FILE__, __LINE__);
 	exit(EXIT_FAILURE);
@@ -37,7 +38,7 @@ void print_all_env(){
 			if(w < 0){
 				sortie_error();
 			}
-			i = 0;//debut d'une nouvelle ligne	
+			i = 0;//debut d'une nouvelle ligne
 		}
 	}
 	close(fd);
@@ -54,7 +55,7 @@ void print_one_env(const char *variable_env_name){
 	}
 	char read_line[MAX_READED];
 	char read_char;
-	char *first_word; 
+	char *first_word;
 	size_t variable_lenght = strlen(variable_env_name);
 	first_word = malloc(variable_lenght * sizeof(char));
 	if(first_word == NULL){
@@ -76,7 +77,7 @@ void print_one_env(const char *variable_env_name){
 				}
 				break;
 			}
-			i = 0;//debut d'une nouvelle ligne	
+			i = 0;//debut d'une nouvelle ligne
 		}
 	}//while
 	free(first_word);
@@ -87,7 +88,7 @@ void print_one_env(const char *variable_env_name){
 }
 
 /*
-*Verifie si une variable existe 
+*Verifie si une variable existe
 *retourne 1 si oui 0 sinon
 */
 char is_exist_env(const char *variable_env_name){
@@ -112,7 +113,7 @@ char is_exist_env(const char *variable_env_name){
 				free(first_word);
 				return 1;
 			}
-			i = 0;//debut d'une nouvelle ligne	
+			i = 0;//debut d'une nouvelle ligne
 		}
 	}//while
 	free(first_word);`
@@ -140,7 +141,7 @@ void delete_env(const char *variable_env_name){
 	//lecture du fichier caractere par caractere
 	while(read(fd, &read_char, sizeof(char)) > 0){
 		read_line[i++] = read_char;
-		if(read_char == '\n'){//fin de la ligne	
+		if(read_char == '\n'){//fin de la ligne
 			memmove(first_word, read_line, variable_lenght);
 			if(strcmp(variable_env_name, first_word) != 0){
 				if(write(fd_aux, read_line, i) != i){
@@ -150,7 +151,7 @@ void delete_env(const char *variable_env_name){
 					sortie_error();
 				}
 			}
-			i = 0;//debut d'une nouvelle ligne	
+			i = 0;//debut d'une nouvelle ligne
 		}
 	}//while
 	free(first_word);
@@ -183,7 +184,7 @@ void update_env(const char *variable_env_name, const char *value){
 	//lecture du fichier caractere par caractere
 	while(read(fd, &read_char, sizeof(char)) > 0){
 		read_line[i++] = read_char;
-		if(read_char == '\n'){//fin de la ligne	
+		if(read_char == '\n'){//fin de la ligne
 			memmove(first_word, read_line, variable_lenght);
 			if(strcmp(variable_env_name, first_word) != 0){//on recopie la variable correspondante
 				if(write(fd_aux, read_line, i) != i){
@@ -201,7 +202,7 @@ void update_env(const char *variable_env_name, const char *value){
 				sortie_error();
 			}
 		}
-			i = 0;//debut d'une nouvelle ligne	
+			i = 0;//debut d'une nouvelle ligne
 		}
 	}//while
 	if(!bool){//on cree une nouvelle ligne pour la nouvelle variable
@@ -216,21 +217,5 @@ void update_env(const char *variable_env_name, const char *value){
 	close(fd);
 	close(fd_aux);
 	remove("variables_env.txt");
-	rename("file_aux", "variables_env.txt");	
+	rename("file_aux", "variables_env.txt");
 }
-
-/*********************************************************
-*********************TEST*********************************
-**********************************************************/
-int main(void){
-	printf("affiche toutes les variables\n");
-	print_all_env();
-	printf("affiche une seule variable\n");
-	print_one_env("path");
-	print_one_env("ENV");
-	delete_env("pa");
-	print_all_env();
-	update_env("alpha","je teste ma fonction");
-	update_env("variable non existant","un deuxieme test");
-	return 0;
-}	
