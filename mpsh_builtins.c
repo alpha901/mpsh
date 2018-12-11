@@ -1,26 +1,28 @@
-#include "variables_env.h"
-#include "variables_affectation.h"
+/*******CONTIENT LES COMMANDES INTERNES DE MPSH (ECHO, CD ET EXIT) ******/
 #include "mpsh_builtins.h"
+#include "variables.h"
+list_variables listeDesVariables;
 
-list_variables liste_of_variables = NULL;
-
-
-//Fonction incomplette
-void echo(char *variable_name){
-	list_variables l = find_affectation(liste_of_variables, variable_name);
-	if(l != NULL){
-		write(STDOUT_FILENO, l->valeur_variable, strlen(l->valeur_variable));
+//On traite la commande echo
+void traitementCommandeECHO(char **elementsDeLaCommande, int nbMots){
+	list_variables l;
+	for(int i=1;i<nbMots;i++){
+		if(elementsDeLaCommande[i][0]=='$' && elementsDeLaCommande[i][1]!='\0'){
+			//c'est 1 variable
+			sprintf(elementsDeLaCommande[i],"%s",elementsDeLaCommande[i]+1);			
+			l=find_variable(listeDesVariables,elementsDeLaCommande[i]);
+			if(l!=NULL) //si la variable existe, on affiche sa valeur
+				printf("%s ",l->valeur_variable);
+		}
+		else	printf("%s ",elementsDeLaCommande[i]);			
 	}
-	else{
-		//a suivre...
-	}
+	printf("\n");
 }
 
 //On traite la commande cd
 void traitementCommandeCD(char ** elementsDeLaCommande, int nbMots) {
-	if ((nbMots==1)||((nbMots==2)&&(elementsDeLaCommande[1][0]=='~'))){
+	if ((nbMots==1)||((nbMots==2)&&(elementsDeLaCommande[1][0]=='~')))
 		chdir(getenv("HOME"));
-	}
 	else if (nbMots>2) printf("Trop d'arguments\n");
 	else {
 		if (elementsDeLaCommande[1][0]=='.') {

@@ -116,7 +116,7 @@ char is_exist_env(const char *variable_env_name){
 			i = 0;//debut d'une nouvelle ligne
 		}
 	}//while
-	free(first_word);`
+	free(first_word);
 	close(fd);
 	return 0;
 }
