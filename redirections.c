@@ -26,7 +26,7 @@ int redirectionGenerale(char *sortie,char *modeOuverture,short erreur,int *fd){
 			copieDescripteur=dup(2);
 			dup2(*fd,2);
 		}
-		else{	
+		else{
 			copieDescripteur=dup(1);
 			dup2(*fd,1);
 		}
@@ -43,16 +43,15 @@ int redirectionGenerale(char *sortie,char *modeOuverture,short erreur,int *fd){
 	}
 	return copieDescripteur;
 }
-//stocke dans le fichier sortie le contenu de la sortie standard de commande 
+//stocke dans le fichier sortie le contenu de la sortie standard de commande
 int redirectionSortie(char *sortie,int *fd){
 	return redirectionGenerale(sortie,"w",0,fd);
 }
-//l'entrée standard de la prochaine commande devient entree 
+//l'entrée standard de la prochaine commande devient entree
 int redirectionEntree(char *entree,int *fd){
 	return redirectionGenerale(entree,"r",0,fd);
 }
-//stocke dans le fichier sortie le contenu de la sortie d'erreur de commande 
+//stocke dans le fichier sortie le contenu de la sortie d'erreur de commande
 int redirectionErreur(char *sortie,int *fd){
 	return redirectionGenerale(sortie,"w",1,fd);
 }
-

@@ -3,26 +3,29 @@
 #include "commande_app.h"
 
 //On traite la commande echo
-void traitementCommandeECHO(char **elementsDeLaCommande, int nbMots){
+void traitementCommandeECHO(char **elementsDeLaCommande, int nbMots, short*traitementReussi){
 	list_variables l;
 	for(int i=1;i<nbMots;i++){
 		if(elementsDeLaCommande[i][0]=='$' && elementsDeLaCommande[i][1]!='\0'){
 			//c'est 1 variable
-			sprintf(elementsDeLaCommande[i],"%s",elementsDeLaCommande[i]+1);			
+			sprintf(elementsDeLaCommande[i],"%s",elementsDeLaCommande[i]+1);
 			l=find_variable(listeDesVariables,elementsDeLaCommande[i]);
 			if(l!=NULL) //si la variable existe, on affiche sa valeur
 				printf("%s ",l->valeur_variable);
 		}
-		else	printf("%s ",elementsDeLaCommande[i]);			
+		else	printf("%s ",elementsDeLaCommande[i]);
 	}
 	printf("\n");
 }
 
 //On traite la commande cd
-void traitementCommandeCD(char ** elementsDeLaCommande, int nbMots) {
-	if ((nbMots==1)||((nbMots==2)&&(elementsDeLaCommande[1][0]=='~')))
-		chdir(getenv("HOME"));
-	else if (nbMots>2) printf("Trop d'arguments\n");
+void traitementCommandeCD(char ** elementsDeLaCommande, int nbMots, short*traitementReussi) {
+	if ((nbMots==1)||((nbMots==2)&&(elementsDeLaCommande[1][0]=='~'))){
+		if(chdir(getenv("HOME"))==-1){
+			*traitementReussi = 0;
+			perror("-bash: cd");
+		}
+	}
 	else {
 		if (elementsDeLaCommande[1][0]=='.') {
 			// on va dans le dossier parent
@@ -61,20 +64,23 @@ void traitementCommandeCD(char ** elementsDeLaCommande, int nbMots) {
 					j++;
 				}
 			}
-			chdir(strtok(newDir,"/"));
+			 chdir(strtok(newDir,"/"));
 			free(newDir);
 		}
 		else{
 			// on va dans 1 sous-dossier
-			chdir(elementsDeLaCommande[1]);
+			if (chdir(elementsDeLaCommande[1])==-1) {
+				*traitementReussi = 0;
+				perror("-mpsh: cd");
+			}
 		}
 	}
 }
 
 //On traite la commande exit
-void traitementCommandeEXIT(char ** elementsDeLaCommande, int nbMots) {
+void traitementCommandeEXIT(char ** elementsDeLaCommande, int nbMots, short*traitementReussi) {
 	if (nbMots==1) exit(0);
-	else if(nbMots>2) printf("Trop d'arguments\n" );
+	else if(nbMots>2) perror("-mpsh: exit");
 	else exit(atoi(elementsDeLaCommande[1]));
 }
 
