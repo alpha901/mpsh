@@ -7,4 +7,11 @@
 void traitementCommandeECHO(char ** elementsDeLaCommande, int nbMots);
 void traitementCommandeCD(char ** elementsDeLaCommande, int nbMots);
 void traitementCommandeEXIT(char ** elementsDeLaCommande, int nbMots);
+
+void traitementCommandeAlias(char **elementsDeLaCommande, int nbMots);
+void traitementCommandeUnalias(char **elementsDeLaCommande, int nbMots);
+void traitementCommandeExport(char **elementsDeLaCommande, int nbMots);
+void traitementCommandeHistory(char **elementsDeLaCommande, int nbMots);
+void traitementCommandeType(char **elementsDeLaCommande, int nbMots);
+
 #endif

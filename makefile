@@ -6,17 +6,23 @@ LDLIBS= -lreadline
 
 $(ALL): mpsh
 
-mpsh: mpsh.o mpsh_builtins.o variables.o variables_env.o redirections.o 
+mpsh: mpsh.o variables.o variables_env.o commande_app.o mpsh_builtins.o redirections.o alias.o history.o 
 
-mpsh.o: mpsh.c mpsh.h mpsh_builtins.h redirections.h variables.h
+mpsh.o: mpsh.c commande_app.h
 
-mpsh_builtins.o: mpsh_builtins.c mpsh_builtins.h variables.h variables_env.h
-
-redirections.o : redirections.c redirections.h
+alias.o : alias.c alias.h
 
 variables.o : variables.c variables.h
 
+redirections.o : redirections.c redirections.h
+
+history.o : history.c history.h variables_env.h
+
 variables_env.o : variables_env.c variables_env.h
+
+commande_app.o : commande_app.c commande_app.h
+
+mpsh_builtins.o: mpsh_builtins.c commande_app.h
 
 cleanall:
 	rm -f *~ $(ALL)

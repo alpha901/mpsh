@@ -12,36 +12,17 @@
 #define MAX_READED 1024
 
 /*
-*fonction appelee quand une fonction ou un appel system renvoi une erreur
-*/
-
-static void sortie_error(){
-	fprintf(stderr, "%s in file %s in line %d\n", strerror( errno ), __FILE__, __LINE__);
-	exit(EXIT_FAILURE);
-}
-
-/*
 *Affiche toutes les variables d'environnement
 */
 void print_all_env(){
-	int fd = open("variables_env.txt", O_RDWR|O_CREAT, S_IRUSR|S_IWUSR);
-	if(fd <  0){
-		sortie_error();
+	FILE *f = fopen(".variables_env.txt", "r");
+	if(f == NULL)
+		printf("Eurreur\n");
+	char buf[MAX_READED];
+	while(fgets(buf, MAX_READED, f) != NULL){
+		fprintf(stdout, "%s", buf);
 	}
-	char read_line[MAX_READED];
-	char read_char;
-	int w, i=0;
-	while(read(fd, &read_char, sizeof(char)) > 0){
-		read_line[i++] = read_char;
-		if(read_char == '\n'){//find de la ligne -> une nouvelle variable a afficher
-			w = write(STDOUT_FILENO, read_line, i);
-			if(w < 0){
-				sortie_error();
-			}
-			i = 0;//debut d'une nouvelle ligne
-		}
-	}
-	close(fd);
+	fclose(f);
 }
 
 /*
@@ -49,173 +30,100 @@ void print_all_env(){
 *exemple echo $PATH
 */
 void print_one_env(const char *variable_env_name){
-	int fd = open("variables_env.txt", O_RDWR|O_CREAT, S_IRUSR|S_IWUSR);
-	if(fd <  0){
-		sortie_error();
-	}
-	char read_line[MAX_READED];
-	char read_char;
-	char *first_word;
-	size_t variable_lenght = strlen(variable_env_name);
-	first_word = malloc(variable_lenght * sizeof(char));
-	if(first_word == NULL){
-		sortie_error();
-	}
-	int w, i=0, bool=0;
-	//lecture du fichier caractere par caractere
-	while(read(fd, &read_char, sizeof(char)) > 0){
-		read_line[i++] = read_char;
-		if(read_char == '\n'){//fin de la ligne
-			memmove(first_word, read_line, variable_lenght);//copie dans first_word variable_lenght caracteres depuis read_line a partir du debut
-			if(strcmp(variable_env_name, first_word) == 0){
-				bool = 1;
-				w = write(STDOUT_FILENO, read_line, i);
-				if(w < 0){
-					close(fd);
-					free(first_word);
-					sortie_error();
-				}
-				break;
-			}
-			i = 0;//debut d'une nouvelle ligne
+	FILE *f = fopen(".variables_env.txt", "r");
+	if(f == NULL)
+		printf("Eurreur\n");
+	int b=0;
+	char buf[MAX_READED];
+	char tmp[strlen(variable_env_name)];
+	while(fgets(buf, MAX_READED, f) != NULL){
+		memmove(tmp, buf, strlen(variable_env_name));
+		if(strcmp(tmp, variable_env_name) == 0){
+			fprintf(stdout, "%s", buf);
+			break;
 		}
-	}//while
-	free(first_word);
-	if(!bool){
+	}
+	if(!b){
 		fprintf(stderr, "la variable \"%s\" n'est pas definie.\n", variable_env_name);
 	}
-	close(fd);
+	fclose(f);
 }
 
 /*
 *Verifie si une variable existe
 *retourne 1 si oui 0 sinon
 */
-char is_exist_env(const char *variable_env_name){
-	int fd = open("variables_env.txt", O_RDWR|O_CREAT, S_IRUSR|S_IWUSR);
-	if(fd <  0){
-		sortie_error();
+char *find_env(const char *variable_env_name){
+	FILE *f = fopen(".variables_env.txt", "r");
+	if(f == NULL){
+		return NULL;
 	}
-	char read_line[MAX_READED];
-	char read_char;
-	int i=0;
-	size_t variable_lenght = strlen(variable_env_name);
-	char *first_word = malloc(variable_lenght * sizeof(char));
-	if(first_word == NULL){
-		sortie_error();
-	}
-	//lecture du fichier caractere par caractere
-	while(read(fd, &read_char, sizeof(char)) > 0){
-		read_line[i++] = read_char;
-		if(read_char == '\n'){//fin de la ligne
-			memmove(first_word, read_line, variable_lenght);
-			if(strcmp(variable_env_name, first_word) == 0){
-				free(first_word);
-				return 1;
-			}
-			i = 0;//debut d'une nouvelle ligne
+	char buf[MAX_READED];
+	char tmp[strlen(variable_env_name)];
+	while(fgets(buf, MAX_READED, f) != NULL){
+		memmove(tmp, buf, strlen(variable_env_name));
+		if(strcmp(tmp, variable_env_name) == 0){
+			fclose(f);
+			char *s = malloc(sizeof(char)* (strlen(buf) +1));
+			memmove(s, buf, strlen(buf)+1);
+			return s;
 		}
-	}//while
-	free(first_word);
-	close(fd);
-	return 0;
+	}
+
+	fclose(f);
+	return NULL;
 }
 /*
 *supprime une variable d'environnemetn
 *exemple unset
 */
-void delete_env(const char *variable_env_name){
-	int fd = open("variables_env.txt", O_RDWR|O_CREAT, S_IRUSR|S_IWUSR);
-	int fd_aux = open("file_aux", O_RDWR|O_CREAT, S_IRUSR|S_IWUSR);
-	if(fd < 0 || fd_aux < 0){
-		sortie_error();
-	}
-	char read_line[MAX_READED];
-	char read_char;
-	int i=0;
-	size_t variable_lenght = strlen(variable_env_name);
-	char *first_word = malloc(variable_lenght * sizeof(char));
-	if(first_word == NULL){
-		sortie_error();
-	}
-	//lecture du fichier caractere par caractere
-	while(read(fd, &read_char, sizeof(char)) > 0){
-		read_line[i++] = read_char;
-		if(read_char == '\n'){//fin de la ligne
-			memmove(first_word, read_line, variable_lenght);
-			if(strcmp(variable_env_name, first_word) != 0){
-				if(write(fd_aux, read_line, i) != i){
-					free(first_word);
-					close(fd);
-					close(fd_aux);
-					sortie_error();
-				}
-			}
-			i = 0;//debut d'une nouvelle ligne
+int delete_env(const char *variable_env_name){
+	FILE *f = fopen(".variables_env.txt", "a+");
+	FILE *aux = fopen("aux", "w");
+	if(f == NULL || aux == NULL)
+		return 0;
+	char buf[MAX_READED];
+	char tmp[strlen(variable_env_name)];
+	while(fgets(buf, MAX_READED, f) != NULL){
+		memmove(tmp, buf, strlen(variable_env_name));
+		if(strcmp(tmp, variable_env_name) != 0){
+			fputs(buf,aux);
 		}
-	}//while
-	free(first_word);
-	close(fd);
-	close(fd_aux);
-	remove("variables_env.txt");
-	rename("file_aux", "variables_env.txt");
+	}
+	fclose(f);
+	fclose(aux);
+	remove(".variables_env.txt");
+	rename("aux", ".variables_env.txt");
+	return 1;
 }
 /*
 *modofie ou cree une variable d'environnement
 *exemple export $variable (creation)
 *exemple $CHEMIN=:/bin/src/tout ce que je veux (modification)
 */
-void update_env(const char *variable_env_name, const char *value){
-	char *new_variable = malloc(strlen(variable_env_name) + strlen(value) + 2);
-	int fd = open("variables_env.txt", O_RDWR|O_CREAT, S_IRUSR|S_IWUSR);
-	int fd_aux = open("file_aux", O_RDWR|O_CREAT, S_IRUSR|S_IWUSR);
-	if(fd < 0 || fd_aux < 0 || new_variable == NULL){
-		sortie_error();
+int update_env(const char *variable_env_name, const char *value) {
+	FILE *f = fopen(".variables_env.txt", "a+");
+	FILE *aux = fopen("aux", "w");
+	if(f == NULL || aux == NULL){
+		return 0;
 	}
-	strcat(strcat(strcat(strcat(new_variable, variable_env_name), "="), value),"\n");
-	char read_line[MAX_READED];
-	char read_char;
-	int i=0, bool=0;
-	size_t variable_lenght = strlen(variable_env_name);
-	char *first_word = malloc(variable_lenght * sizeof(char));
-	if(first_word == NULL){
-		sortie_error();
-	}
-	//lecture du fichier caractere par caractere
-	while(read(fd, &read_char, sizeof(char)) > 0){
-		read_line[i++] = read_char;
-		if(read_char == '\n'){//fin de la ligne
-			memmove(first_word, read_line, variable_lenght);
-			if(strcmp(variable_env_name, first_word) != 0){//on recopie la variable correspondante
-				if(write(fd_aux, read_line, i) != i){
-					free(first_word);
-					close(fd);
-					close(fd_aux);
-					sortie_error();
-				}
-			}else{//on remplace l'ancienne variable par la nouvelle variable
-			bool =1;
-			if(write(fd_aux, new_variable, strlen(new_variable)) != strlen(new_variable)){
-				free(first_word);
-				close(fd);
-				close(fd_aux);
-				sortie_error();
-			}
-		}
-			i = 0;//debut d'une nouvelle ligne
-		}
-	}//while
-	if(!bool){//on cree une nouvelle ligne pour la nouvelle variable
-		if(write(fd_aux, new_variable, strlen(new_variable)) != strlen(new_variable)){
-			free(first_word);
-			close(fd);
-			close(fd_aux);
-			sortie_error();
+	char buf[MAX_READED];
+	char tmp[strlen(variable_env_name)];
+	char *new_env = malloc(sizeof(char)*(strlen(variable_env_name)+strlen(value) + 1));
+	sprintf(new_env, "%s=%s\n", variable_env_name, value);
+	rewind(f);
+	while(fgets(buf, MAX_READED, f) != NULL){
+		memmove(tmp, buf, strlen(variable_env_name));
+		if(strcmp(tmp, variable_env_name) != 0){
+			if(fputs(buf,aux) <0)
+				return 0;
 		}
 	}
-	free(first_word);
-	close(fd);
-	close(fd_aux);
-	remove("variables_env.txt");
-	rename("file_aux", "variables_env.txt");
+	if(fputs(new_env,aux) < 0)
+		return 0;
+	fclose(f);
+	fclose(aux);
+	remove(".variables_env.txt");
+	rename("aux", ".variables_env.txt");
+	return 1;
 }

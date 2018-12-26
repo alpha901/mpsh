@@ -1,6 +1,5 @@
 /*****************FICHIER GERANT LES REDIRECTIONS DE COMMANDES SUR MPSH**************/
-#include "redirections.h"
-#include "mpsh.h"
+#include "commande_app.h"
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>

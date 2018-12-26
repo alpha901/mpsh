@@ -1,7 +1,6 @@
 /*******CONTIENT LES COMMANDES INTERNES DE MPSH (ECHO, CD ET EXIT) ******/
-#include "mpsh_builtins.h"
-#include "variables.h"
-list_variables listeDesVariables;
+
+#include "commande_app.h"
 
 //On traite la commande echo
 void traitementCommandeECHO(char **elementsDeLaCommande, int nbMots){
@@ -77,4 +76,95 @@ void traitementCommandeEXIT(char ** elementsDeLaCommande, int nbMots) {
 	if (nbMots==1) exit(0);
 	else if(nbMots>2) printf("Trop d'arguments\n" );
 	else exit(atoi(elementsDeLaCommande[1]));
+}
+
+
+void traitementCommandeAlias(char **elementsDeLaCommande, int nbMots){
+	if(nbMots == 1)//dans la commande on a que le mot "alias" => on affiche la liste des alias
+		print_all_alias();
+	else{
+		for (int i = 1; i < nbMots; ++i)
+		{
+			char *nom_alias = strtok(elementsDeLaCommande[i], "=");
+			char *valeur_alias = strtok(NULL, "=");
+			if(valeur_alias == NULL){
+				valeur_alias=find_alias(nom_alias);
+				if(valeur_alias!=NULL)
+					fprintf(stdout, "%s=%s",nom_alias, valeur_alias );
+			}
+			else{
+				if(strtok(NULL, "=") != NULL)
+					perror("-mpsh : alias : Erreur\n");
+				else
+					update_alias(nom_alias, valeur_alias);
+			}
+		}	
+	}
+}
+
+void traitementCommandeUnalias(char **elementsDeLaCommande, int nbMots){
+	if(nbMots == 1)//dans la commande on a que le mot "alias" => on affiche la liste des alias
+		perror("-mpsh : unalias\n");
+	else{
+		for (int i = 1; i < nbMots; ++i)
+		{
+			delete_alias(elementsDeLaCommande[i]);
+		}	
+	}
+}
+
+void traitementCommandeExport(char **elementsDeLaCommande, int nbMots){
+	if(nbMots == 1)//dans la commande on a que le mot "alias" => on affiche la liste des alias
+		print_all_env();
+	else{
+		for (int i = 1; i < nbMots; ++i)
+		{
+			list_variables p = find_variable(listeDesVariables, elementsDeLaCommande[i]);
+			if(p!=NULL){
+				update_env(p->nom_variable, p->valeur_variable);
+			}
+		}	
+	}
+}
+
+void traitementCommandeHistory(char **elementsDeLaCommande, int nbMots){
+	if (nbMots == 1)
+		list_history();
+	else if(nbMots == 2){
+		double n = atoi(elementsDeLaCommande[1]);
+		if(n < 0)
+			update_max_nombre_de_commandes((int)fabs(n));
+		else{
+			char *commande = find_history((int)n);
+			if(commande == NULL)
+				perror("-mpsh : history : numero non valide\n");
+			else{
+				char *q=strtok(commande, "\n");
+				executer_commande(q);
+			}
+		}
+	}
+	else
+		perror("-mpsh : history : Erreur\n");
+}
+void traitementCommandeType(char **elementsDeLaCommande, int nbMots){
+	char *nomsCommandes[]={"cd","alias","cat","echo","exit","history","ls","mkdir","pwd",
+		"type","unalias","umask","export"};//mauvais
+	for(int i = 1 ; i<nbMots; i++){
+		char *commande = find_alias(elementsDeLaCommande[i]);
+		if (commande != NULL)		
+			fprintf(stdout, "%s est un alias vers : %s", elementsDeLaCommande[i], commande);
+		else{
+			int trouve=0;
+			for(int j=0; j<NB_COMMANDES; j++){
+				if(strcmp(elementsDeLaCommande[i], nomsCommandes[j]) == 0 ){
+					fprintf(stdout, "%s est une primitive de mpsh\n", elementsDeLaCommande[i]);
+					trouve=1;
+					break;
+				}
+			}
+			if(!trouve)
+				fprintf(stdout, "-mpsh : type : %s : non trouve\n", elementsDeLaCommande[i]);
+		}
+	}
 }
