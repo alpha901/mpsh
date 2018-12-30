@@ -84,6 +84,31 @@ void traitementCommandeEXIT(char ** elementsDeLaCommande, int nbMots, short*trai
 	else exit(atoi(elementsDeLaCommande[1]));
 }
 
+//On traite la commande umask
+void traitementCommandeUMASK(char ** elementsDeLaCommande, int nbMots, short*traitementReussi) {
+	mode_t mask = umask(0);
+	if (nbMots==1) {
+		int tmp = (int)mask;
+		int count = 0;
+		while (tmp!=0) {
+			tmp/=10;
+			count++;
+		}
+		umask(mask);
+		switch (count) {
+			case 1 : printf("000%o\n", mask);break;
+			case 2 : printf("00%o\n", mask);break;
+			case 3 : printf("0%o\n", mask);break;
+			case 4 : printf("%o\n", mask);break;
+			default : perror("Error");
+		}
+	}else if(nbMots==2){
+		if ((atoi(elementsDeLaCommande[1])<778)&&(atoi(elementsDeLaCommande[1])>=0)) {
+			mask = strtol(elementsDeLaCommande[1], NULL, 8);
+			umask(mask);
+		}
+	}
+}
 
 void traitementCommandeAlias(char **elementsDeLaCommande, int nbMots){
 	if(nbMots == 1)//dans la commande on a que le mot "alias" => on affiche la liste des alias
@@ -104,7 +129,7 @@ void traitementCommandeAlias(char **elementsDeLaCommande, int nbMots){
 				else
 					update_alias(nom_alias, valeur_alias);
 			}
-		}	
+		}
 	}
 }
 
@@ -115,7 +140,7 @@ void traitementCommandeUnalias(char **elementsDeLaCommande, int nbMots){
 		for (int i = 1; i < nbMots; ++i)
 		{
 			delete_alias(elementsDeLaCommande[i]);
-		}	
+		}
 	}
 }
 
@@ -129,7 +154,7 @@ void traitementCommandeExport(char **elementsDeLaCommande, int nbMots){
 			if(p!=NULL){
 				update_env(p->nom_variable, p->valeur_variable);
 			}
-		}	
+		}
 	}
 }
 
@@ -158,7 +183,7 @@ void traitementCommandeType(char **elementsDeLaCommande, int nbMots){
 		"type","unalias","umask","export"};//mauvais
 	for(int i = 1 ; i<nbMots; i++){
 		char *commande = find_alias(elementsDeLaCommande[i]);
-		if (commande != NULL)		
+		if (commande != NULL)
 			fprintf(stdout, "%s est un alias vers : %s", elementsDeLaCommande[i], commande);
 		else{
 			int trouve=0;

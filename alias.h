@@ -1,5 +1,5 @@
 #ifndef ALIAS_H
-#define ALIAS
+#define ALIAS_H
 
 #include <stdio.h>
 #include <stdlib.h>
