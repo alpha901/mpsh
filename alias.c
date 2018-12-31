@@ -3,7 +3,7 @@
 #define MAX_READED 1024
 
 /*
-*Affiche toute les alias
+*Affiche tous les alias
 */
 int print_all_alias(){
 	FILE *f = fopen(".alias.txt", "a+");
@@ -20,23 +20,24 @@ int print_all_alias(){
 	return 1;
 }
 
-//affiche l'alias dont le nom est passe en parametre
+//retourne l'alias dont le nom est passe en parametre ou NULL si l'alias n'existe pas
 char *find_alias(const char *alias_name){
-	FILE *f = fopen(".alias.txt", "r");
+	FILE *f = fopen(".alias.txt", "a+");
 	if(f == NULL){
 		printf("mpsh : alias : Eurreur\n");
 		return NULL;
 	}
+	rewind(f);
 	char buf[MAX_READED];
 	while(fgets(buf, MAX_READED, f) != NULL){
 		char *q = strtok(buf, "=");
 		if(q==NULL){
 			fclose(f);
-			return 0;
+			return NULL;
 		}
 		if(strcmp(q, alias_name) == 0){
 			fclose(f);
-			return strtok(NULL,"=");
+			return strtok(NULL,"");
 		}
 	}
 	fclose(f);
@@ -45,7 +46,7 @@ char *find_alias(const char *alias_name){
 
 /*
 *supprime un alias
-*exemple unalias
+*retourne 0 en cas d'erreur 1 sinon
 */
 int delete_alias(const char *alias_name){
 	FILE *f = fopen(".alias.txt", "a+");

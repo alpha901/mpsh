@@ -122,6 +122,8 @@ void traitementCommandeAlias(char **elementsDeLaCommande, int nbMots){
 				valeur_alias=find_alias(nom_alias);
 				if(valeur_alias!=NULL)
 					fprintf(stdout, "%s=%s",nom_alias, valeur_alias );
+				else
+					fprintf(stdout,"-mpsh : alias : %s : non trouve\n", nom_alias);		
 			}
 			else{
 				if(strtok(NULL, "=") != NULL)

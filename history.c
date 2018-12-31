@@ -2,17 +2,19 @@
 #include "history.h"
 #include "variables_env.h"
 
-#define MAX_CMD 10
+#define MAX_CMD 100
 int nb_cmd, max_cmd;
+int taille=5;
 //verifie si les la variable d'environnement "name" est defini si oui retourne sa valeur sinon l'initialise
+// name prend la valeur "nb_cmd" et "max_cmd"
 void init_var(char *name){
 	char *line = find_env(name);
-	if(line == NULL){
+	if(line == NULL){//la variable n'existe pas
 		if(strcmp(name, "nb_cmd") == 0){
-			nb_cmd = 0;
+			nb_cmd = 0; //initialise le nombre de commande a 0
 		}
 		else{
-			max_cmd = MAX_CMD;
+			max_cmd = MAX_CMD; //initialise le nombre de commande maximal a MAX_CMD
 			char s_numero[length(max_cmd)];
 			sprintf(s_numero, "%d", max_cmd);
 			update_env("max_cmd", s_numero);
@@ -62,7 +64,7 @@ int ajout_history(const char *commande){
 		return 0;
 	init_var("nb_cmd");//on initialise la variable nb_cmd
 	nb_cmd++;
-	fprintf(f, "%d %s\n",nb_cmd, commande);
+	fprintf(f, "%d %s\n", nb_cmd, commande);
 	init_var("max_cmd");
 	if(nb_cmd > max_cmd){//si le nombre de commande est supperieur au maximum on supprime les premieres lignes
 		nb_cmd=max_cmd;
@@ -70,29 +72,36 @@ int ajout_history(const char *commande){
 	}
 	char s_numero[length(nb_cmd)];
 	sprintf(s_numero, "%d", nb_cmd);
-	update_env("nb_cmd", s_numero);//on met a jour le nombre de commande enregistre
+	update_env("nb_cmd", s_numero);//on met a jour le nombre de commande enregistre dans nb_cmd
 	fclose(f);
 	return 1;
 }
 
 //supprimer les n premieres lignes
-void delete_first_n_lines(FILE *f, int n){
-	FILE *aux_del = fopen(".aux_del", "w");
+int delete_first_n_lines(FILE *f, int n){
+	FILE *aux_del = fopen(".aux_del", "w+");
+	if(aux_del == NULL)
+		return 0;
 	char buf[MAX_READED];
 	int i=0;
 	rewind(f);
 	while(fgets(buf, MAX_READED, f) != NULL){
 		i++;
-		if(i>n)
+		if(i>n){
 			fputs(buf, aux_del);	
+		}
 	}
+	numeroter_ligne(aux_del, ".aux_del");
 	fclose(aux_del);
 	remove(".history.txt");
 	rename(".aux_del", ".history.txt");
+	return 1;
 }
 //remet le bon numero sur chaque ligne
-void numeroter_ligne(FILE *f){
-	FILE *aux_num = fopen(".aux_num", "w");
+int numeroter_ligne(FILE *f, char *file){
+	FILE *aux_num = fopen(".aux_num", "w+");
+	if (aux_num == NULL)
+		return 0;
 	int numero = 1;//premiere ligne lue
 	char buf[MAX_READED];
 	rewind(f);
@@ -101,8 +110,9 @@ void numeroter_ligne(FILE *f){
 	    numero++;
   	}
 	fclose(aux_num);
-	remove(".history.txt");
-	rename(".aux_num", ".history.txt");
+	remove(file);
+	rename(".aux_num", file);
+	return 1;
 }
 
 //permet de retrouver une commande par son numero dans history
@@ -125,16 +135,16 @@ char *find_history(int n){
 	}
 	return NULL;
 }
-//modifie le nombre max de commande dans l'historique
+//modifie le nombre maximal de commande autorise dans l'historique
 void update_max_nombre_de_commandes(int n){
 	char s_numero[length(n)];
 	sprintf(s_numero, "%d", n);
 	update_env("max_cmd", s_numero);
-	//reorganiser le fichier des historiques
-	 init_var("nb_cmd");
+	init_var("nb_cmd");
 	if(nb_cmd > n){
+		nb_cmd = n;
+		update_env("nb_cmd", s_numero);
 		FILE *f = fopen(".history.txt", "r+");
 		delete_first_n_lines(f, nb_cmd - n);
-		numeroter_ligne(f);
 	}
 }

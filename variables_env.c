@@ -29,29 +29,36 @@ void print_all_env(){
 *Affiche la variable d'environnement correspondant a "variable_env_name"
 *exemple echo $PATH
 */
-void print_one_env(const char *variable_env_name){
+int print_one_env(const char *variable_env_name){
 	FILE *f = fopen(".variables_env.txt", "r");
-	if(f == NULL)
-		printf("Eurreur\n");
+	if(f == NULL){
+		printf("mpsh : alias : Eurreur\n");
+		return 0;
+	}
 	int b=0;
 	char buf[MAX_READED];
-	char tmp[strlen(variable_env_name)];
 	while(fgets(buf, MAX_READED, f) != NULL){
-		memmove(tmp, buf, strlen(variable_env_name));
-		if(strcmp(tmp, variable_env_name) == 0){
-			fprintf(stdout, "%s", buf);
-			break;
+		char *q = strtok(buf, "=");
+		if(q==NULL){
+			fclose(f);
+			return 0;
+		}
+		if(strcmp(q, variable_env_name) == 0){
+			fclose(f);
+			b=1;
+			fprintf(stdout, "%s=%s\n",q, buf);
 		}
 	}
 	if(!b){
 		fprintf(stderr, "la variable \"%s\" n'est pas definie.\n", variable_env_name);
 	}
 	fclose(f);
+	return 1;
 }
 
 /*
 *Verifie si une variable existe
-*retourne 1 si oui 0 sinon
+*retourne  sa valeur si oui NULL si non
 */
 char *find_env(const char *variable_env_name){
 	FILE *f = fopen(".variables_env.txt", "r");
@@ -59,17 +66,20 @@ char *find_env(const char *variable_env_name){
 		return NULL;
 	}
 	char buf[MAX_READED];
-	char tmp[strlen(variable_env_name)];
 	while(fgets(buf, MAX_READED, f) != NULL){
-		memmove(tmp, buf, strlen(variable_env_name));
-		if(strcmp(tmp, variable_env_name) == 0){
+		int n = strlen(buf);
+		char *s = malloc(sizeof(char)* (n+1));
+		memmove(s, buf, n);
+		char *q = strtok(buf, "=");
+		if(q==NULL){
 			fclose(f);
-			char *s = malloc(sizeof(char)* (strlen(buf) +1));
-			memmove(s, buf, strlen(buf)+1);
+			return NULL;
+		}
+		if(strcmp(q, variable_env_name) == 0){
+			fclose(f);
 			return s;
 		}
 	}
-
 	fclose(f);
 	return NULL;
 }

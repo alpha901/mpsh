@@ -15,9 +15,9 @@ void init_var(char *name);
 int length(int n);
 int ajout_history(const char *commande);
 
-void delete_first_n_lines(FILE *f, int n);
+int delete_first_n_lines(FILE *f, int n);
 int list_history();
-void numeroter_ligne(FILE *f);
+int numeroter_ligne(FILE *f, char *file);
 char *find_history(int n);
 void update_max_nombre_de_commandes(int n);
 
