@@ -64,10 +64,9 @@ int ajout_history(const char *commande){
 		return 0;
 	init_var("nb_cmd");//on initialise la variable nb_cmd
 	nb_cmd++;
-	fprintf(f, "%d %s\n", nb_cmd, commande);
+	fprintf(f, "%*d %s\n",taille, nb_cmd, commande);
 	init_var("max_cmd");
 	if(nb_cmd > max_cmd){//si le nombre de commande est supperieur au maximum on supprime les premieres lignes
-		nb_cmd=max_cmd;
 		delete_first_n_lines(f, 1);
 	}
 	char s_numero[length(nb_cmd)];
@@ -91,12 +90,12 @@ int delete_first_n_lines(FILE *f, int n){
 			fputs(buf, aux_del);	
 		}
 	}
-	numeroter_ligne(aux_del, ".aux_del");
 	fclose(aux_del);
 	remove(".history.txt");
 	rename(".aux_del", ".history.txt");
 	return 1;
 }
+
 //remet le bon numero sur chaque ligne
 int numeroter_ligne(FILE *f, char *file){
 	FILE *aux_num = fopen(".aux_num", "w+");
@@ -128,22 +127,20 @@ char *find_history(int n){
 		}
 	}
 	if(n == numero){
-		int l = length(numero);
-		char *commande = malloc(sizeof(char)*strlen(buf) - l);
-		memmove(commande, &buf[l+1] , strlen(buf) - l);
+		//int l = length(numero);
+		char *commande = malloc(sizeof(char)*(strlen(buf) - taille));
+		memmove(commande, &buf[taille] , strlen(buf) - taille);
 		return commande;
 	}
 	return NULL;
 }
 //modifie le nombre maximal de commande autorise dans l'historique
 void update_max_nombre_de_commandes(int n){
-	char s_numero[length(n)];
+	char s_numero[taille];
 	sprintf(s_numero, "%d", n);
+	init_var("max_cmd");
 	update_env("max_cmd", s_numero);
-	init_var("nb_cmd");
-	if(nb_cmd > n){
-		nb_cmd = n;
-		update_env("nb_cmd", s_numero);
+	if(max_cmd > n){
 		FILE *f = fopen(".history.txt", "r+");
 		delete_first_n_lines(f, nb_cmd - n);
 	}

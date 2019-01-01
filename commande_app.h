@@ -31,4 +31,5 @@ void traitementCommandeAvecRedirection(char **motsDeLaCommande,int nbMots,int in
 void traitementCommandeAvecConnecteur(char **motsDeLaCommande,int nbMots,short *traitementReussi,short alias);
 void traitementCommandeAvecPipe(char **motsDeLaCommande,int nbMots,short *traitementReussi,short alias);
 void traitementAffectation(char *nomVariable,char *valeur,short *traitementReussi);
+void executer_alias(char *alias_name);
 #endif

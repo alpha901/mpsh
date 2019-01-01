@@ -16,10 +16,8 @@ short commandeCorrecte(char *commande,char **motsDeLaCommande,short *indiceRedir
 	char *mot=strtok(tmp," "); // on parcourt tous les mots de la commande séparés par des espaces
 	short premierMotEstUneCommande=0,nbMots=0,positionCourant=0;
 	char caractereCourant;
-	printf("mot %s\n",commande);
 	//on vérifie s'il y'a des connecteurs logiques et pipe
 	while(mot!=NULL){
-		printf("mot %s\n",mot);
 		motsDeLaCommande[nbMots]=(char *)malloc(strlen(mot)+1);
 		strcpy(motsDeLaCommande[nbMots++],mot);
 		//on vérifie d'abord le premier mot est une commande
@@ -36,25 +34,19 @@ short commandeCorrecte(char *commande,char **motsDeLaCommande,short *indiceRedir
 					*affectation=1;
 					return 1;
 				}
-				if(find_alias(mot)!=NULL)
+				if(find_alias(mot)!=NULL){
 					*alias=1;
-				else{
-					printf("typ");
-					return 0;
+					return 1;
 				}
-				premierMotEstUneCommande=1;
+				return 0;
+				//premierMotEstUneCommande=1;
 			}
 			positionCourant = positionCourant + (strlen(mot)+1); 
 		}
 		//mots suivants
 		else{
-			//on vérifie s'il y'a 1 alias
-			if (find_alias(mot)!=NULL){
-					*alias=1;
-					positionCourant = positionCourant + (strlen(mot)+1);
-			}
 			// on vérifie s'il y a des connecteurs logiques et pipe
-			else if((strcmp(mot,"||")==0)||(strcmp(mot,"&&")==0)||(strcmp(mot,"|")==0)){
+			if((strcmp(mot,"||")==0)||(strcmp(mot,"&&")==0)||(strcmp(mot,"|")==0)){
 				// s'il existe un connecteur ou pipe, on vérifie si la suite de commande est aussi correcte
 				char tmp2[strlen(commande)+1];
 				strcpy(tmp2,commande);
@@ -131,24 +123,6 @@ void traitementAffectation(char *nomVariable,char *valeur,short *traitementReuss
 //On traite la commande correcte
 void traitementCommande(char **motsDeLaCommande,int nbMots, short *traitementReussi,short alias){
 	if(nbMots!=-1){  //si la commande est vide on ne la traite pas
-		//On traite 1 alias
-		if(alias && find_alias(motsDeLaCommande[0])!=NULL){
-			char *valeurAlias=strtok(find_alias(motsDeLaCommande[0]),"\n");
-			char nouvelleCommande[100];
-			strcpy(nouvelleCommande,valeurAlias);
-			for(int j=1;j<nbMots;j++){
-				printf("nouveau mot : %s\n",motsDeLaCommande[j]);
-				strcat(nouvelleCommande," ");
-				strcat(nouvelleCommande,motsDeLaCommande[j]);
-			}
-			printf("Nouvelle commande: %s\n",nouvelleCommande);
-			executer_commande(nouvelleCommande);
-			printf("r");
-			for(int i=0;i<nbMots;i++)
-				free(motsDeLaCommande[i]);
-			printf("x");
-			return;
-		}
 		//préparation du tableau des mots de la commande pour le execv
 		char **elementsDeLaCommande=(char **)malloc((nbMots+1)*sizeof(char *));
 		if(elementsDeLaCommande==NULL){
@@ -265,57 +239,57 @@ void traitementCommandeAvecRedirection(char **motsDeLaCommande,int nbMots,int in
 	}
 }
 
-//traitement d'une commande contenant un connecteur
-void traitementCommandeAvecConnecteur(char **motsDeLaCommande,int nbMots, short*traitementReussi,short alias){
-		int i=0,et=0,ou=0;
-		// on cherche la position de 1 er connecteur
-		for (i = 0; i < nbMots; i++) {
-			if (strcmp(motsDeLaCommande[i],"||")==0){
-				ou = i; break;
-			}
-			else if (strcmp(motsDeLaCommande[i],"&&")==0) {
-				et = i; break;
-			}
-		}
-		// on vérifier s'il reste que 1 commande, on la traite directement
-		if ((et==0)&&(ou==0)){
-			traitementCommande(motsDeLaCommande,nbMots,traitementReussi,alias);
-			return;
-		}
-		// on sépare la commande en deux parties et les stocke
-		char **elementsGauche=(char **)malloc(NB_MAX_MOTS_COMMANDE*sizeof(char *));
-		char **elementsDroite=(char **)malloc(NB_MAX_MOTS_COMMANDE*sizeof(char *));
-		if ((elementsGauche==NULL)||(elementsDroite==NULL)){
-			perror("Problème d'allocation mémoire\n");
-			return;
-		}
-		for (int j = 0; j < i; j++){
-			elementsGauche[j]=motsDeLaCommande[j];
-		}
-		for (int z = 0, k = i+1; k < nbMots; z++,k++){
-			elementsDroite[z]=motsDeLaCommande[k];
-		}
-		// on traite la partie gauche avec son connecteur
-		if (ou > 0) {
-			traitementCommande(elementsGauche,ou,traitementReussi,alias);
-			free(elementsGauche);
-			// si "ou" et la commande gauche ne fonctionne pas, on contenue à traiter la partie droite
-			if ((*traitementReussi)==0) {
-				*traitementReussi = 1;
-				traitementCommandeAvecConnecteur(elementsDroite,nbMots-i-1,traitementReussi,alias);
-				free(elementsDroite);
-			}else
-				free(elementsDroite);
-		}else if (et > 0) {
-			traitementCommande(elementsGauche,et,traitementReussi,alias);
-			// si "et" et la commande gauche fonctionne, on contenue à traiter la partie droite
-			if (*traitementReussi) {
-				*traitementReussi = 1;
-				traitementCommandeAvecConnecteur(elementsDroite,nbMots-i-1,traitementReussi,alias);
-				free(elementsDroite);
-			}else
-				free(elementsDroite);
-		}
+void traitementCommandeAvecConnecteur(char **motsDeLaCommande,int nbMots, short*traitementReussi, short alias){
+        int i = 0, et = 0, ou = 0;
+        // on cherche la position de 1 er connecteur
+        for (i = 0; i < nbMots; i++) {
+            if (strcmp(motsDeLaCommande[i],"||")==0){
+                ou = i; break;
+            }
+            else if (strcmp(motsDeLaCommande[i],"&&")==0) {
+                et = i; break;
+            }
+        } 
+        // on vérifier s'il reste que 1 commande, on la traite directement
+        if ((et==0)&&(ou==0)){
+            traitementCommande(motsDeLaCommande,nbMots,traitementReussi, alias);
+            return;
+        }
+
+        // on sépare la commande en deux parties et les stocke
+        char **elementsGauche=(char **)malloc(NB_MAX_MOTS_COMMANDE*sizeof(char *));
+        char **elementsDroite=(char **)malloc(NB_MAX_MOTS_COMMANDE*sizeof(char *));
+        if ((elementsGauche==NULL)||(elementsDroite==NULL)){
+            perror("Problème d'allocation mémoire\n");
+            return;
+        }
+        for (int j = 0; j < i; j++){
+            elementsGauche[j]=motsDeLaCommande[j];
+        }
+        for (int z = 0, k = i+1; k < nbMots; z++,k++){
+            elementsDroite[z]=motsDeLaCommande[k];
+        }
+        // on traite la partie gauche avec son connecteur
+        if (ou > 0) {
+            traitementCommande(elementsGauche,ou,traitementReussi, alias);
+            free(elementsGauche);
+            // si "ou" et la commande gauche ne fonctionne pas, on contenue à traiter la partie droite
+            if (*traitementReussi) {
+                *traitementReussi = 1;
+                traitementCommandeAvecConnecteur(elementsDroite,nbMots-i-1,traitementReussi, alias);
+                free(elementsDroite);
+            }else
+                free(elementsDroite);
+        }else if (et > 0) {
+            traitementCommande(elementsGauche,et,traitementReussi, alias);
+            // si "et" et la commande gauche fonctionne, on contenue à traiter la partie droite
+            if (!(*traitementReussi)) {
+                *traitementReussi = 1;
+                traitementCommandeAvecConnecteur(elementsDroite,nbMots-i-1,traitementReussi, alias);
+                free(elementsDroite);
+            }else
+                free(elementsDroite);
+        }
 }
 
 //traitement d'une commande contenant un Pipe |
@@ -355,6 +329,17 @@ void traitementCommandeAvecPipe(char **motsDeLaCommande,int nbMots, short*traite
 	else
 	  perror("Erreur");
 }
+void executer_alias(char *alias_name){
+    char *commande = find_alias(alias_name);
+    if(commande != NULL){
+        char *s= malloc(sizeof(char)*(strlen(commande)-1));
+        int i;
+        for (i = 0; i < strlen(commande)-1; ++i)
+            s[i] = commande[i];    
+        s[i] = '\0';
+        executer_commande(s);
+    }
+}
 //chaque commande saisie exécute cette fonction
 void executer_commande(char *commande){
 	ajout_history(commande);
@@ -379,7 +364,10 @@ void executer_commande(char *commande){
 				traitementCommandeAvecConnecteur(motsCommande,nbMots,&traitementReussi,alias);
 			else if(contientPipe)
 				traitementCommandeAvecPipe(motsCommande,nbMots,&traitementReussi,alias);
-			else	traitementCommande(motsCommande,nbMots,&traitementReussi,alias);
+			else if(alias)
+                executer_alias(motsCommande[0]);
+			else	
+				traitementCommande(motsCommande,nbMots,&traitementReussi,alias);
 			sprintf(valeurDeRetour,"%d",traitementReussi);
 			listeDesVariables=add_variable(listeDesVariables,"?",valeurDeRetour);
 		}
