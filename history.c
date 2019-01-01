@@ -80,7 +80,7 @@ int ajout_history(const char *commande){
 //supprimer les n premieres lignes
 int delete_first_n_lines(FILE *f, int n){
 	FILE *aux_del = fopen(".aux_del", "w+");
-	if(aux_del == NULL)
+	if(aux_del==NULL)
 		return 0;
 	char buf[MAX_READED];
 	int i=0;

@@ -23,8 +23,8 @@ int print_all_alias(){
 //retourne l'alias dont le nom est passe en parametre ou NULL si l'alias n'existe pas
 char *find_alias(const char *alias_name){
 	FILE *f = fopen(".alias.txt", "a+");
-	if(f == NULL){
-		printf("mpsh : alias : Eurreur\n");
+	if(f==NULL){
+		perror("-mpsh : alias : Erreur\n");
 		return NULL;
 	}
 	rewind(f);
@@ -50,14 +50,20 @@ char *find_alias(const char *alias_name){
 */
 int delete_alias(const char *alias_name){
 	FILE *f = fopen(".alias.txt", "a+");
-	FILE *alias_aux = fopen(".alias_aux", "w");
-	if(f == NULL || alias_aux == NULL)
+	if(f == NULL){
+		perror("-mpsh: alias : Erreur\n");
 		return 0;
+	}
+	FILE *alias_aux = fopen(".alias_aux", "w");
+	if(alias_aux == NULL){
+		perror("-mpsh: alias : Erreur\n");
+		return 0;
+	}
 	char buf[MAX_READED];
 	int b=0;
 	rewind(f);
 	while(fgets(buf, MAX_READED, f) != NULL){
-		char *q = strtok(buf, "=");
+		char *q=strtok(buf, "=");
 		if(q==NULL)
 			return 0;
 		if(strcmp(q, alias_name) != 0)
@@ -79,8 +85,13 @@ int delete_alias(const char *alias_name){
 */
 int update_alias(const char *alias_name, const char *value){
 	FILE *f = fopen(".alias.txt", "a+");
+	if(f == NULL){
+		perror("-mpsh: alias : Erreur\n");
+		return 0;
+	}
 	FILE *alias_aux = fopen(".alias_aux", "w");
-	if(f == NULL || alias_aux == NULL){
+	if(alias_aux == NULL){
+		perror("-mpsh: alias : Erreur\n");
 		return 0;
 	}
 	char buf[MAX_READED];

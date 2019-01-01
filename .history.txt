@@ -1,0 +1,11 @@
+10alias b=xc
+20alias b=x
+30alias b=p
+40alias b=p
+50cd ..
+60alias b=op
+70alias b=pm
+80alias 
+90ls
+10ls
+11pwd

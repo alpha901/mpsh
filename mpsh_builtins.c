@@ -3,7 +3,7 @@
 #include "commande_app.h"
 
 //On traite la commande echo
-void traitementCommandeECHO(char **elementsDeLaCommande, int nbMots, short*traitementReussi){
+void traitementCommandeECHO(char **elementsDeLaCommande, int nbMots, short *traitementReussi){
 	list_variables l;
 	for(int i=1;i<nbMots;i++){
 		if(elementsDeLaCommande[i][0]=='$' && elementsDeLaCommande[i][1]!='\0'){
@@ -11,19 +11,21 @@ void traitementCommandeECHO(char **elementsDeLaCommande, int nbMots, short*trait
 			sprintf(elementsDeLaCommande[i],"%s",elementsDeLaCommande[i]+1);
 			l=find_variable(listeDesVariables,elementsDeLaCommande[i]);
 			if(l!=NULL) //si la variable existe, on affiche sa valeur
-				printf("%s ",l->valeur_variable);
+				printf("%s ",l->valeur_variable);		
 		}
 		else	printf("%s ",elementsDeLaCommande[i]);
 	}
 	printf("\n");
+	*traitementReussi=0;
 }
 
 //On traite la commande cd
-void traitementCommandeCD(char ** elementsDeLaCommande, int nbMots, short*traitementReussi) {
+void traitementCommandeCD(char ** elementsDeLaCommande, int nbMots, short *traitementReussi) {
+	*traitementReussi=0;
 	if ((nbMots==1)||((nbMots==2)&&(elementsDeLaCommande[1][0]=='~'))){
 		if(chdir(getenv("HOME"))==-1){
-			*traitementReussi = 0;
-			perror("-bash: cd");
+			*traitementReussi=1;
+			perror("-mpsh: cd");
 		}
 	}
 	else {
@@ -70,7 +72,7 @@ void traitementCommandeCD(char ** elementsDeLaCommande, int nbMots, short*traite
 		else{
 			// on va dans 1 sous-dossier
 			if (chdir(elementsDeLaCommande[1])==-1) {
-				*traitementReussi = 0;
+				*traitementReussi=1;
 				perror("-mpsh: cd");
 			}
 		}
@@ -79,13 +81,18 @@ void traitementCommandeCD(char ** elementsDeLaCommande, int nbMots, short*traite
 
 //On traite la commande exit
 void traitementCommandeEXIT(char ** elementsDeLaCommande, int nbMots, short*traitementReussi) {
+	*traitementReussi=0;
 	if (nbMots==1) exit(0);
-	else if(nbMots>2) perror("-mpsh: exit");
+	else if(nbMots>2){
+		perror("-mpsh: exit");
+		*traitementReussi=1;
+	}
 	else exit(atoi(elementsDeLaCommande[1]));
 }
 
 //On traite la commande umask
 void traitementCommandeUMASK(char ** elementsDeLaCommande, int nbMots, short*traitementReussi) {
+	*traitementReussi=0;
 	mode_t mask = umask(0);
 	if (nbMots==1) {
 		int tmp = (int)mask;
@@ -100,7 +107,7 @@ void traitementCommandeUMASK(char ** elementsDeLaCommande, int nbMots, short*tra
 			case 2 : printf("00%o\n", mask);break;
 			case 3 : printf("0%o\n", mask);break;
 			case 4 : printf("%o\n", mask);break;
-			default : perror("Error");
+			default : perror("Error");*traitementReussi=1;
 		}
 	}else if(nbMots==2){
 		if ((atoi(elementsDeLaCommande[1])<778)&&(atoi(elementsDeLaCommande[1])>=0)) {
@@ -110,44 +117,71 @@ void traitementCommandeUMASK(char ** elementsDeLaCommande, int nbMots, short*tra
 	}
 }
 
-void traitementCommandeAlias(char **elementsDeLaCommande, int nbMots){
+void traitementCommandeAlias(char **elementsDeLaCommande, int nbMots,short *traitementReussi){
+	*traitementReussi=0;
 	if(nbMots == 1)//dans la commande on a que le mot "alias" => on affiche la liste des alias
 		print_all_alias();
 	else{
-		for (int i = 1; i < nbMots; ++i)
-		{
-			char *nom_alias = strtok(elementsDeLaCommande[i], "=");
-			char *valeur_alias = strtok(NULL, "=");
-			if(valeur_alias == NULL){
-				valeur_alias=find_alias(nom_alias);
-				if(valeur_alias!=NULL)
-					fprintf(stdout, "%s=%s",nom_alias, valeur_alias );
-				else
-					fprintf(stdout,"-mpsh : alias : %s : non trouve\n", nom_alias);		
-			}
-			else{
-				if(strtok(NULL, "=") != NULL)
-					perror("-mpsh : alias : Erreur\n");
-				else
-					update_alias(nom_alias, valeur_alias);
-			}
+    int commande_lenght = 0;
+    for (int i = 1; i < nbMots; ++i)
+        commande_lenght += strlen(elementsDeLaCommande[i]);
+    char *s = malloc(sizeof(char)*(commande_lenght+nbMots-1));
+    if (s==NULL){    
+        perror("-mpsh : alias : Erreur\n");
+				return;
 		}
-	}
+    int n=0;
+    for (int i = 1; i < nbMots; ++i){
+        int t = strlen(elementsDeLaCommande[i]);
+        sprintf(s+n, "%s ", elementsDeLaCommande[i]);
+        n +=t+1;    
+    }
+    char *nom_alias, *valeur_alias;
+    char *pos = strchr(elementsDeLaCommande[1], '"');
+    if(pos != NULL){
+        nom_alias = strtok(s, "=");
+        valeur_alias = strtok(NULL, "\"");
+        update_alias(nom_alias, valeur_alias);
+    }
+    else{
+        for(int i = 1; i < nbMots; ++i){
+          nom_alias = strtok(elementsDeLaCommande[i], "=");
+          valeur_alias = strtok(NULL, "=");
+          if(valeur_alias == NULL){
+              valeur_alias=find_alias(nom_alias);
+              if(valeur_alias!=NULL)
+                  fprintf(stdout, "%s=%s",nom_alias, valeur_alias );
+              else{
+								fprintf(stdout,"-mpsh : alias : %s : non trouve\n", nom_alias); 
+								*traitementReussi=1;
+							}       
+          }
+          else{
+              if(strtok(NULL, "=") != NULL){
+                  perror("-mpsh : alias : Erreur\n");
+									*traitementReussi=1;
+							}
+              else   update_alias(nom_alias, valeur_alias);
+          }
+        }//for
+		}//else
+	}//else
 }
 
-void traitementCommandeUnalias(char **elementsDeLaCommande, int nbMots){
-	if(nbMots == 1)//dans la commande on a que le mot "alias" => on affiche la liste des alias
+void traitementCommandeUnalias(char **elementsDeLaCommande, int nbMots,short *traitementReussi){
+	if(nbMots == 1){
 		perror("-mpsh : unalias\n");
+		*traitementReussi=1;
+	}
 	else{
 		for (int i = 1; i < nbMots; ++i)
-		{
 			delete_alias(elementsDeLaCommande[i]);
-		}
+		*traitementReussi=0;
 	}
 }
 
-void traitementCommandeExport(char **elementsDeLaCommande, int nbMots){
-	if(nbMots == 1)//dans la commande on a que le mot "alias" => on affiche la liste des alias
+void traitementCommandeExport(char **elementsDeLaCommande, int nbMots,short *traitementReussi){
+	if(nbMots == 1)
 		print_all_env();
 	else{
 		for (int i = 1; i < nbMots; ++i)
@@ -158,13 +192,15 @@ void traitementCommandeExport(char **elementsDeLaCommande, int nbMots){
 			}
 		}
 	}
+	*traitementReussi=0;
 }
 
-void traitementCommandeHistory(char **elementsDeLaCommande, int nbMots){
+void traitementCommandeHistory(char **elementsDeLaCommande, int nbMots,short *traitementReussi){
+	*traitementReussi=0;
 	if (nbMots == 1)
 		list_history();
 	else if(nbMots == 2){
-		double n = atoi(elementsDeLaCommande[1]);
+		double n=atoi(elementsDeLaCommande[1]);
 		if(n < 0)
 			update_max_nombre_de_commandes((int)fabs(n));
 		else{
@@ -177,12 +213,14 @@ void traitementCommandeHistory(char **elementsDeLaCommande, int nbMots){
 			}
 		}
 	}
-	else
+	else{
 		perror("-mpsh : history : Erreur\n");
+		*traitementReussi=1;
+	}
 }
-void traitementCommandeType(char **elementsDeLaCommande, int nbMots){
-	char *nomsCommandes[]={"cd","alias","cat","echo","exit","history","ls","mkdir","pwd",
-		"type","unalias","umask","export"};//mauvais
+char *nomsCommandes[];
+void traitementCommandeType(char **elementsDeLaCommande, int nbMots,short *traitementReussi){
+	*traitementReussi=0;
 	for(int i = 1 ; i<nbMots; i++){
 		char *commande = find_alias(elementsDeLaCommande[i]);
 		if (commande != NULL)
@@ -196,8 +234,11 @@ void traitementCommandeType(char **elementsDeLaCommande, int nbMots){
 					break;
 				}
 			}
-			if(!trouve)
+			if(!trouve){
 				fprintf(stdout, "-mpsh : type : %s : non trouve\n", elementsDeLaCommande[i]);
+				*traitementReussi=1;
+			}
 		}
 	}
+	
 }

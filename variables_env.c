@@ -17,12 +17,13 @@
 void print_all_env(){
 	FILE *f = fopen(".variables_env.txt", "r");
 	if(f == NULL)
-		printf("Eurreur\n");
-	char buf[MAX_READED];
-	while(fgets(buf, MAX_READED, f) != NULL){
-		fprintf(stdout, "%s", buf);
+		perror("-mpsh : env : Erreur\n");
+	else{
+		char buf[MAX_READED];
+		while(fgets(buf, MAX_READED, f) != NULL)
+			fprintf(stdout, "%s", buf);
+		fclose(f);
 	}
-	fclose(f);
 }
 
 /*
@@ -32,7 +33,7 @@ void print_all_env(){
 int print_one_env(const char *variable_env_name){
 	FILE *f = fopen(".variables_env.txt", "r");
 	if(f == NULL){
-		printf("mpsh : alias : Eurreur\n");
+		perror("-mpsh : env : Erreur\n");
 		return 0;
 	}
 	int b=0;
@@ -63,6 +64,7 @@ int print_one_env(const char *variable_env_name){
 char *find_env(const char *variable_env_name){
 	FILE *f = fopen(".variables_env.txt", "r");
 	if(f == NULL){
+		perror("-mpsh : env : Erreur\n");
 		return NULL;
 	}
 	char buf[MAX_READED];
@@ -89,9 +91,16 @@ char *find_env(const char *variable_env_name){
 */
 int delete_env(const char *variable_env_name){
 	FILE *f = fopen(".variables_env.txt", "a+");
-	FILE *aux = fopen("aux", "w");
-	if(f == NULL || aux == NULL)
+	if(f == NULL){
+		perror("-mpsh : env : Erreur\n");
 		return 0;
+	}
+	FILE *aux = fopen("aux", "w");
+	if(aux == NULL){
+		fclose(f);
+		perror("-mpsh : env : Erreur\n");
+		return 0;
+	}
 	char buf[MAX_READED];
 	char tmp[strlen(variable_env_name)];
 	while(fgets(buf, MAX_READED, f) != NULL){
@@ -103,7 +112,7 @@ int delete_env(const char *variable_env_name){
 	fclose(f);
 	fclose(aux);
 	remove(".variables_env.txt");
-	rename("aux", ".variables_env.txt");
+	rename("aux",".variables_env.txt");
 	return 1;
 }
 /*
@@ -113,8 +122,14 @@ int delete_env(const char *variable_env_name){
 */
 int update_env(const char *variable_env_name, const char *value) {
 	FILE *f = fopen(".variables_env.txt", "a+");
+	if(f == NULL){
+		perror("-mpsh : env : Erreur\n");
+		return 0;
+	}
 	FILE *aux = fopen("aux", "w");
-	if(f == NULL || aux == NULL){
+	if(aux == NULL){
+		fclose(f);
+		perror("-mpsh : env : Erreur\n");
 		return 0;
 	}
 	char buf[MAX_READED];

@@ -1,0 +1,4 @@
+INVITE=red
+max_cmd=5
+CHEMIN=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+nb_cmd=5
