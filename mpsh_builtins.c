@@ -5,18 +5,29 @@
 	//On traite la commande echo
 	void traitementCommandeECHO(char **elementsDeLaCommande, int nbMots, short *traitementReussi){
 		list_variables l;
-		for(int i=1;i<nbMots;i++){
-			if(elementsDeLaCommande[i][0]=='$' && elementsDeLaCommande[i][1]!='\0'){
-				//c'est 1 variable
-				sprintf(elementsDeLaCommande[i],"%s",elementsDeLaCommande[i]+1);
-				l=find_variable(listeDesVariables,elementsDeLaCommande[i]);
-				if(l!=NULL) //si la variable existe, on affiche sa valeur
-					printf("%s ",l->valeur_variable);		
-			}
-			else	printf("%s ",elementsDeLaCommande[i]);
+		char *s=malloc(100);
+		if(s==NULL){
+			perror("-mpsh : echo : Erreur\n");
+			*traitementReussi=1;
 		}
-		printf("\n");
-		*traitementReussi=0;
+		else{
+			for(int i=1;i<nbMots;i++){
+				if(elementsDeLaCommande[i][0]=='$' && elementsDeLaCommande[i][1]!='\0'){
+					//c'est 1 variable
+					l=find_variable(listeDesVariables,elementsDeLaCommande[i]+1);
+					//si la variable existe, on affiche sa valeur
+					if(l!=NULL) 
+						printf("%s ",l->valeur_variable);	
+					//sinon on regarde si c'est 1 variable d'environnement
+					else if((s=find_env(elementsDeLaCommande[i]+1))!=NULL)
+							printf("%s ",strtok(&s[strlen(elementsDeLaCommande[i])],"\n"));
+				}
+				else	printf("%s ",elementsDeLaCommande[i]);
+			}
+			free(s);
+			printf("\n");
+			*traitementReussi=0;
+		}
 	}
 
 	//On traite la commande cd
@@ -25,8 +36,10 @@
 		if ((nbMots==1)||((nbMots==2)&&(elementsDeLaCommande[1][0]=='~'))){
 			if(chdir(getenv("HOME"))==-1){
 				*traitementReussi=1;
-				perror("-mpsh: cd");
+				perror("-mpsh: cd\n");
 			}
+			update_env("CHEMIN","/usr/local/sbin:/usr/local/bin:/usr/sbin:"
+	"/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin");
 		}
 		else {
 			if (elementsDeLaCommande[1][0]=='.') {
@@ -73,7 +86,7 @@
 				// on va dans 1 sous-dossier
 				if (chdir(elementsDeLaCommande[1])==-1) {
 					*traitementReussi=1;
-					perror("-mpsh: cd");
+					perror("-mpsh: cd\n");
 				}
 			}
 		}
@@ -84,7 +97,7 @@
 		*traitementReussi=0;
 		if (nbMots==1) exit(0);
 		else if(nbMots>2){
-			perror("-mpsh: exit");
+			perror("-mpsh: exit\n");
 			*traitementReussi=1;
 		}
 		else exit(atoi(elementsDeLaCommande[1]));

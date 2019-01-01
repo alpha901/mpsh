@@ -214,6 +214,7 @@ void traitementCommande(char **motsDeLaCommande,int nbMots, short *traitementReu
 				free(elementsDeLaCommande[i]);
 		free(elementsDeLaCommande);
 		}//else
+		
 	}//if
 }
 

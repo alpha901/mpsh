@@ -9,3 +9,85 @@
 90ls
 10ls
 11pwd
+    1 alias
+    2 alias a=cat equipe 
+    3 alias a="cat equipe"
+    4 a
+    5 cat equipe
+    6 ls
+    7 ls
+    8 pwd
+    9 cd .. && pwd
+   10 cd ..
+   11 cd ..
+   12 ls
+   13 pwd
+   14 pwd
+   15 ls
+   16 ls
+   17 cd
+   18 cd ..
+   19 ls
+   20 ls
+   21 cd ..
+   22 ls
+   23 pwd
+   24 pwd
+   25 pwd
+   26 echo pi
+   27 cat equipe 
+   28 cd 
+   29 cd
+   30 ls
+   31 pwd
+   32 cd
+   33 cd
+   34 cd f ml
+   35 ls
+   36 pwd
+   37 ls
+   38 cd
+   39 cd lm po
+   40 ls
+   41 cat equipe 
+   42 pwd
+   43 cd
+   44 cd
+   45 echo a || cd ..
+   46 pwd
+   47 echo $CHEMIN
+   48 echo $CHEMIN
+   49 env
+   50 export
+   51 echo CHEMIN
+   52 echo $nb_cmd
+   53 echo nb_cmd
+   54 echo $CHEMIN
+   55 a=9
+   56 echo $a
+   57 echo $CHEMIN taz
+   58 echo $CHEMIN
+   59 export
+   60 a=9
+   61 echo $a
+   62 echo $max_cmd
+   63 echo $CHEMIN
+   64 echo $a
+   65 a=4
+   66 echo $a
+   67 cd
+   68 pwd
+   69 ls
+   70 echo $CHEMIN
+   71 echo $CHEMIN || pwd
+   72 echo a && pwd
+   73 echo a || pwd
+   74 cd 
+   75 ls
+   76 ls
+   77 alias
+   78 a
+   79 cat equipe
+   80 echo $?
+   81 alias 
+   82 history 
