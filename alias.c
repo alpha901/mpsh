@@ -8,7 +8,7 @@
 int print_all_alias(){
 	FILE *f = fopen(".alias.txt", "a+");
 	if(f == NULL){
-		printf("-mpsh : alias : Eurreur\n");
+		perror("-mpsh : alias : Erreur\n");
 		return 0;
 	}
 	char buf[MAX_READED];
@@ -18,6 +18,21 @@ int print_all_alias(){
 	}
 	fclose(f);
 	return 1;
+}
+//retourne le nombre d'alias existant
+int nb_alias(){
+	int i=0;
+	FILE *f = fopen(".alias.txt", "a+");
+	if(f == NULL){
+		perror("-mpsh : alias : Erreur\n");
+		return 0;
+	}
+	char buf[MAX_READED];
+	rewind(f);
+	while(fgets(buf, MAX_READED, f) != NULL)
+		i++;
+	fclose(f);
+	return i;
 }
 
 //retourne l'alias dont le nom est passe en parametre ou NULL si l'alias n'existe pas

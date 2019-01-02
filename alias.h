@@ -11,6 +11,7 @@
 #include <errno.h>
 
 int print_all_alias();
+int nb_alias();
 char *find_alias(const char *alias_name);
 int delete_alias(const char *alias_name);
 int update_alias(const char *alias_name, const char *value);

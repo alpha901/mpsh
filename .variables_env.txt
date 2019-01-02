@@ -1,3 +1,0 @@
-max_cmd=100
-CHEMIN=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
-nb_cmd=82

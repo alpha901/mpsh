@@ -7,5 +7,4 @@
 
 char **completionDuMotCourant(const char *text,short debut,short fin);
 char *genererLeMotCorrespondant(const char *prefixe,int e);
-//char *genererAliasCorrespondant(const char *prefixe,int e);
 #endif

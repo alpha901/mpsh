@@ -16,8 +16,10 @@
 					//c'est 1 variable
 					l=find_variable(listeDesVariables,elementsDeLaCommande[i]+1);
 					//si la variable existe, on affiche sa valeur
-					if(l!=NULL) 
-						printf("%s ",l->valeur_variable);	
+					if(l!=NULL){
+						if(!strcmp(l->valeur_variable,""))	printf("0 ");
+						else	printf("%s ",l->valeur_variable);
+					}	
 					//sinon on regarde si c'est 1 variable d'environnement
 					else if((s=find_env(elementsDeLaCommande[i]+1))!=NULL)
 							printf("%s ",strtok(&s[strlen(elementsDeLaCommande[i])],"\n"));
@@ -38,8 +40,6 @@
 				*traitementReussi=1;
 				perror("-mpsh: cd\n");
 			}
-			update_env("CHEMIN","/usr/local/sbin:/usr/local/bin:/usr/sbin:"
-	"/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin");
 		}
 		else {
 			if (elementsDeLaCommande[1][0]=='.') {
@@ -90,6 +90,8 @@
 				}
 			}
 		}
+		update_env("CHEMIN","/usr/local/sbin:/usr/local/bin:/usr/sbin:"
+	"/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin");
 	}
 
 	//On traite la commande exit

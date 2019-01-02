@@ -1,4 +1,5 @@
 #include "commande_app.h"
+#define LONGUEUR_MAX_COMMANDE 100
 
 char caracteresAutorises[]={'.','"','_','$','/','~','-','=','?',':','>','<','|','&'};
 char *nomsCommandes[]={"cd","alias","cat","echo","exit","history","ls","mkdir","pwd",
@@ -129,6 +130,25 @@ void traitementCommande(char **motsDeLaCommande,int nbMots, short *traitementReu
 			printf("Echec du traitement de la commande \n");
 			*traitementReussi=0;
 		}
+		if(alias && find_alias(motsDeLaCommande[0])!=NULL){
+			char *nouvelleCommande=(char *)malloc(LONGUEUR_MAX_COMMANDE);
+			if(nouvelleCommande==NULL){
+				perror("Echec de la commande\n");
+				*traitementReussi=1;
+				return;
+			}
+			strcpy(nouvelleCommande,find_alias(motsDeLaCommande[0]));
+			strcat(nouvelleCommande," ");
+			for(int i=1;i<nbMots;i++){
+				strcat(nouvelleCommande,motsDeLaCommande[i]);
+				strcat(nouvelleCommande," ");
+			}
+			executer_commande(nouvelleCommande);
+			for(int i=0;i<nbMots;i++)
+				free(motsDeLaCommande[i]);
+			free(nouvelleCommande);
+			return;
+		}	
 		else{
 			memcpy(elementsDeLaCommande,motsDeLaCommande,nbMots*sizeof(char *));
 			elementsDeLaCommande[nbMots]=NULL;	
@@ -165,10 +185,8 @@ void traitementCommande(char **motsDeLaCommande,int nbMots, short *traitementReu
 				if(x==NULL){
 					perror("Échec de la commande \n");
 					*traitementReussi=1;
-					for(int i=0;i<nbMots;i++){
-						free(motsDeLaCommande[i]);
+					for(int i=0;i<nbMots;i++)
 						free(elementsDeLaCommande[i]);
-					}
 					free(elementsDeLaCommande);
 					return;
 				}
@@ -357,16 +375,14 @@ void executer_commande(char *commande){
 		}
 		else{
 			char valeurDeRetour[2];
-			if(affectation)
-				traitementAffectation(motsCommande[0],motsCommande[1],&traitementReussi);
-			else if(redirection)
+			if(redirection)
 				traitementCommandeAvecRedirection(motsCommande,nbMots,redirection,&traitementReussi,alias);
 			else if(contientConnecteur)
 				traitementCommandeAvecConnecteur(motsCommande,nbMots,&traitementReussi,alias);
 			else if(contientPipe)
 				traitementCommandeAvecPipe(motsCommande,nbMots,&traitementReussi,alias);
-			else if(alias)
-                executer_alias(motsCommande[0]);
+			else if(affectation)
+				traitementAffectation(motsCommande[0],motsCommande[1],&traitementReussi);
 			else	
 				traitementCommande(motsCommande,nbMots,&traitementReussi,alias);
 			sprintf(valeurDeRetour,"%d",traitementReussi);
